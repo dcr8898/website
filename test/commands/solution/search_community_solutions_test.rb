@@ -127,10 +127,10 @@ status: :published
                                            published_iteration_head_tests_status: :passed
     submission_1 = create :submission, solution: solution_1, tests_status: :passed
     solution_2 = create :concept_solution, exercise: exercise, num_stars: 22, published_at: Time.current, status: :published,
-                                          published_iteration_head_tests_status: :passed
+                                           published_iteration_head_tests_status: :passed
     submission_2 = create :submission, solution: solution_2, tests_status: :passed
     solution_3 = create :concept_solution, exercise: exercise, num_stars: 33, published_at: Time.current, status: :published,
-                                          published_iteration_head_tests_status: :errored
+                                           published_iteration_head_tests_status: :errored
     submission_3 = create :submission, solution: solution_3, tests_status: :failed
     solution_1.update!(published_iteration: create(:iteration, solution: solution_1, submission: submission_1))
     solution_2.update!(published_iteration: create(:iteration, solution: solution_2, submission: submission_2))
@@ -161,9 +161,12 @@ status: :published
   test "filter: sync_status" do
     track = create :track
     exercise = create :concept_exercise, track: track
-    solution_1 = create :concept_solution, :published, exercise: exercise, git_important_files_hash: exercise.git_important_files_hash
-    solution_2 = create :concept_solution, :published, exercise: exercise, git_important_files_hash: exercise.git_important_files_hash
-    solution_3 = create :concept_solution, :published, exercise: exercise, git_important_files_hash: 'different_hash'
+    solution_1 = create :concept_solution, exercise: exercise, git_important_files_hash: exercise.git_important_files_hash,
+num_stars: 11, published_at: Time.current, status: :published
+    solution_2 = create :concept_solution, exercise: exercise, git_important_files_hash: exercise.git_important_files_hash,
+num_stars: 22, published_at: Time.current, status: :published
+    solution_3 = create :concept_solution, exercise: exercise, git_important_files_hash: 'different_hash', num_stars: 33,
+published_at: Time.current, status: :published
 
     # Sanity check: ensure that the results are not returned using the fallback
     Solution::SearchCommunitySolutions::Fallback.expects(:call).never
@@ -176,9 +179,9 @@ status: :published
 
     wait_for_opensearch_to_be_synced
 
-    assert_equal_arrays [solution_3, solution_2, solution_1], Solution::SearchCommunitySolutions.(exercise, sync_status: nil)
-    assert_equal_arrays [solution_2, solution_1], Solution::SearchCommunitySolutions.(exercise, sync_status: :up_to_date)
-    assert_equal_arrays [solution_2, solution_1], Solution::SearchCommunitySolutions.(exercise, sync_status: "up_to_date")
+    assert_equal [solution_3, solution_2, solution_1], Solution::SearchCommunitySolutions.(exercise, sync_status: nil)
+    assert_equal [solution_2, solution_1], Solution::SearchCommunitySolutions.(exercise, sync_status: :up_to_date)
+    assert_equal [solution_2, solution_1], Solution::SearchCommunitySolutions.(exercise, sync_status: "up_to_date")
     assert_equal [solution_3], Solution::SearchCommunitySolutions.(exercise, sync_status: :out_of_date)
     assert_equal [solution_3], Solution::SearchCommunitySolutions.(exercise, sync_status: "out_of_date")
   end
